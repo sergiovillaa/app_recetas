@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:proyecto_recetas/screens/configuracion.dart'; // ajusta la ruta si es necesario
+import 'package:proyecto_recetas/screens/configuracion.dart'; 
+import 'package:avataaars/avataaars.dart';
+import 'package:flutter/cupertino.dart';
+import 'package:flutter_svg/flutter_svg.dart';// ajusta la ruta si es necesario
 
 
 class ProfileScreen extends StatefulWidget {
@@ -10,9 +13,8 @@ class ProfileScreen extends StatefulWidget {
 }
 
 class _ProfileScreenState extends State<ProfileScreen> {
-
-  bool _darkMode = false;
-
+  var avatar = Avataaar.random();
+  DateTime selectedDate = DateTime.now();
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -35,13 +37,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
           children: [
 
             const SizedBox(height: 20),
-            const CircleAvatar(
-              radius: 50,
-              backgroundImage: NetworkImage(
-                '',
-              ),
+            SvgPicture.string(avatar.toSvg(), width: 200, height: 200),
+            ElevatedButton(
+              onPressed: () {
+                setState(() {
+                  avatar = Avataaar.random();
+                });
+              },
+              child: Text("Generar"),
             ),
-
             const SizedBox(height: 12),
             const Text(
               'Carlos Eduardo',
@@ -67,7 +71,25 @@ class _ProfileScreenState extends State<ProfileScreen> {
             ),
 
             const SizedBox(height: 20),
+            Text("FECHA DE NACIMIENTO:"),
+            SizedBox(
+              height: 250,
+              child: CupertinoDatePicker(
+                mode: CupertinoDatePickerMode.date,
+                initialDateTime: selectedDate,
+                onDateTimeChanged: (DateTime newDate) {
+                  setState(() {
+                    selectedDate = newDate;
+                  });
+                },
+              ),
+            ),
+
+
+
+            const SizedBox(height: 20),
             const Divider(),
+
 
             _OptionTile(
               icon: Icons.book,
