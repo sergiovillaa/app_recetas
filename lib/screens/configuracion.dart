@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:adaptive_theme/adaptive_theme.dart';
 
 class AppSettingsScreen extends StatefulWidget {
   const AppSettingsScreen({super.key});
@@ -83,21 +84,40 @@ class _AppSettingsScreenState extends State<AppSettingsScreen> {
     showDialog(
       context: context,
       builder: (context) {
+        bool isDark =
+            AdaptiveTheme.of(context).mode == AdaptiveThemeMode.dark;
         return AlertDialog(
-          title: const Text('Seleccionar tema'),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              _themeOption('Claro'),
-              _themeOption('Oscuro'),
-              _themeOption('Sistema'),
-            ],
+          title: const Text('Tema'),
+          content: StatefulBuilder(
+            builder: (context, setDialogState) {
+              return Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Expanded(child: Text('Modo oscuro')),
+                  Switch(
+                    value: isDark,
+                    onChanged: (value) {
+                      setDialogState(() {
+                        isDark = value;
+                      });
+                      setState(() {
+                        _theme = value ? 'Oscuro' : 'Claro';
+                      });
+                      if (value) {
+                        AdaptiveTheme.of(context).setDark();
+                      } else {
+                        AdaptiveTheme.of(context).setLight();
+                      }
+                    },
+                  ),
+                ],
+              );
+            },
           ),
         );
       },
     );
   }
-
   Widget _themeOption(String theme) {
     return RadioListTile(
       title: Text(theme),
@@ -112,3 +132,5 @@ class _AppSettingsScreenState extends State<AppSettingsScreen> {
     );
   }
 }
+
+
