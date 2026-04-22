@@ -1,60 +1,61 @@
+import 'package:firebase_auth/firebase_auth.dart' hide EmailAuthProvider;
+import 'package:firebase_ui_auth/firebase_ui_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:proyecto_recetas/screens/signup_screen.dart';
+
 import 'package:proyecto_recetas/screens/tabs.dart';
 
-class AuthScreen extends StatelessWidget {
-  const AuthScreen({super.key});
+class AuthGate extends StatelessWidget {
+ const AuthGate({super.key});
 
-  void _goToApp(BuildContext context) {
-    Navigator.pushReplacement(
-      context,
-      MaterialPageRoute(builder: (context) => const TabsScreen()),
-    );
-  }
-
-  void _goToSignup(BuildContext context) {
-    Navigator.push(
-      context,
-      MaterialPageRoute(builder: (context) => const SignupScreen()),
-    );
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Iniciar sesion'),
-      ),
-      body: Padding(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            const TextField(
-              decoration: InputDecoration(
-                labelText: 'Correo',
-              ),
-            ),
-            const SizedBox(height: 16),
-            const TextField(
-              obscureText: true,
-              decoration: InputDecoration(
-                labelText: 'Contrasena',
-              ),
-            ),
-            const SizedBox(height: 24),
-            FilledButton(
-              onPressed: () => _goToApp(context),
-              child: const Text('Entrar'),
-            ),
-            const SizedBox(height: 12),
-            OutlinedButton(
-              onPressed: () => _goToSignup(context),
-              child: const Text('Crear cuenta'),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
+ @override
+ Widget build(BuildContext context) {
+   return StreamBuilder<User?>(
+     stream: FirebaseAuth.instance.authStateChanges(),  
+     builder: (context, snapshot) {
+       if (!snapshot.hasData) {
+         return SignInScreen(
+           providers: [
+             EmailAuthProvider(),
+           ],
+           headerBuilder: (context, constraints, shrinkOffset) {
+             return Padding(
+               padding: const EdgeInsets.all(20),
+               child: AspectRatio(
+                 aspectRatio: 1,
+                 child: Image.asset('assets/images/photo_1.jpg'),
+               ),
+             );
+           },
+           subtitleBuilder: (context, action) {
+             return Padding(
+               padding: const EdgeInsets.symmetric(vertical: 8.0),
+               child: action == AuthAction.signIn
+                   ? const Text('Welcome to FlutterFire, please sign in!')
+                   : const Text('Welcome to Flutterfire, please sign up!'),
+             );
+           },
+           footerBuilder: (context, action) {
+             return const Padding(
+               padding: EdgeInsets.only(top: 16),
+               child: Text(
+                 'By signing in, you agree to our terms and conditions.',
+                 style: TextStyle(color: Colors.grey),
+               ),
+             );
+           },
+           sideBuilder: (context, shrinkOffset) {
+             return Padding(
+               padding: const EdgeInsets.all(20),
+               child: AspectRatio(
+                 aspectRatio: 1,
+                 child: Image.asset('assets/images/photo_1.jpg'),
+               ),
+             );
+           },
+         );
+       }
+       return const TabsScreen();
+     },
+   );
+ }
 }

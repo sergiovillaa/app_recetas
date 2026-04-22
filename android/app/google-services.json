@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "656746746040",
+    "project_id": "apprecetas-ccdab",
+    "storage_bucket": "apprecetas-ccdab.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:656746746040:android:e00947fea2324110e5244d",
+        "android_client_info": {
+          "package_name": "com.example.proyecto_recetas"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAJOp2lxTQpbp6Scq3XOLLzFi-uends0BE"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:656746746040:android:604ccf15c656e4eae5244d",
+        "android_client_info": {
+          "package_name": "com.example.proyectorecetas"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAJOp2lxTQpbp6Scq3XOLLzFi-uends0BE"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

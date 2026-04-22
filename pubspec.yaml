@@ -33,9 +33,12 @@ dependencies:
 
     
   avataaars: ^1.0.0
-  flutter_svg: ^1.1.6
+  flutter_svg: 2.2.4
   cupertino_icons: ^1.0.8
   adaptive_theme: ^3.7.2
+  firebase_core: ^4.7.0
+  firebase_auth: ^6.4.0
+  firebase_ui_auth: ^3.0.1
 
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.
