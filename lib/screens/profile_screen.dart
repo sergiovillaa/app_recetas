@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:proyecto_recetas/screens/configuracion.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -7,7 +8,6 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:proyecto_recetas/screens/edit_profile_screen.dart';
 import 'package:proyecto_recetas/screens/auth_screen.dart';
 import 'package:proyecto_recetas/screens/own_screen.dart';
-import 'dart:io';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -18,8 +18,9 @@ class ProfileScreen extends StatefulWidget {
 
 class _ProfileScreenState extends State<ProfileScreen> {
   var avatar = Avataaar.random();
-  File? _pickedImage = null;
+  File? _pickedImage;
   DateTime selectedDate = DateTime.now();
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -29,15 +30,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
           IconButton(
             icon: const Icon(Icons.edit),
             onPressed: () async {
-              _pickedImage = await Navigator.push<File?>(
+              final picked = await Navigator.push<File?>(
                 context,
                 MaterialPageRoute(
                   builder: (context) => const EditProfileScreen(),
                 ),
               );
-              if (_pickedImage != null) {
+
+              if (picked != null) {
                 setState(() {
-                  _pickedImage = _pickedImage;
+                  _pickedImage = picked;
                 });
               }
             },
@@ -49,6 +51,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         child: Column(
           children: [
             const SizedBox(height: 20),
+
             _pickedImage != null
                 ? Image.file(
                     _pickedImage!,
@@ -57,16 +60,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     fit: BoxFit.cover,
                   )
                 : SvgPicture.string(avatar.toSvg(), width: 200, height: 200),
-            // ElevatedButton(
-            //   onPressed: () {
-            //     setState(() {
-            //       avatar = Avataaar.random();
-            //     });
-            //   },
-            //   child: Text("Generar"),
-            // ),
+
             const SizedBox(height: 12),
 
+            // Username
             StreamBuilder<DocumentSnapshot>(
               stream: FirebaseFirestore.instance
                   .collection('users')
@@ -79,6 +76,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
                   );
                 }
+
                 final data = snapshot.data!.data() as Map<String, dynamic>?;
 
                 final username =
@@ -96,24 +94,84 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 );
               },
             ),
+
             Text(
               FirebaseAuth.instance.currentUser?.email ?? 'Sin correo',
-              style: TextStyle(color: Colors.grey),
-            ),
-            const SizedBox(height: 20),
-
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceAround,
-                children: const [
-                  _StatItem(title: 'Recetas', value: '24'),
-                  _StatItem(title: 'likes', value: '180'),
-                ],
-              ),
+              style: const TextStyle(color: Colors.grey),
             ),
 
             const SizedBox(height: 20),
+
+            // Estadísticas dinámicas usando username
+            StreamBuilder<DocumentSnapshot>(
+              stream: FirebaseFirestore.instance
+                  .collection('users')
+                  .doc(FirebaseAuth.instance.currentUser!.uid)
+                  .snapshots(),
+              builder: (context, userSnapshot) {
+                if (!userSnapshot.hasData) {
+                  return const Padding(
+                    padding: EdgeInsets.symmetric(vertical: 20),
+                    child: CircularProgressIndicator(),
+                  );
+                }
+
+                final userData =
+                    userSnapshot.data!.data() as Map<String, dynamic>?;
+
+                final username = userData?['username'];
+
+                if (username == null) {
+                  return const Text('Usuario no encontrado');
+                }
+
+                return FutureBuilder<QuerySnapshot>(
+                  future: FirebaseFirestore.instance
+                      .collection('recipes')
+                      .where('author', isEqualTo: username)
+                      .get(),
+                  builder: (context, recipeSnapshot) {
+                    if (!recipeSnapshot.hasData) {
+                      return const Padding(
+                        padding: EdgeInsets.symmetric(vertical: 20),
+                        child: CircularProgressIndicator(),
+                      );
+                    }
+
+                    final docs = recipeSnapshot.data!.docs;
+                    final totalRecipes = docs.length;
+
+                    int totalLikes = 0;
+
+                    for (var doc in docs) {
+                      final data = doc.data() as Map<String, dynamic>;
+                      totalLikes += (data['likes'] ?? 0) as int;
+                    }
+
+                    return Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 24),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceAround,
+                        children: [
+                          _StatItem(
+                            title: 'Recetas',
+                            value: totalRecipes.toString(),
+                          ),
+                          _StatItem(
+                            title: 'Likes',
+                            value: totalLikes.toString(),
+                          ),
+                        ],
+                      ),
+                    );
+                  },
+                );
+              },
+            ),
+
+            const SizedBox(height: 20),
+
+            // Fecha de nacimiento
             StreamBuilder<DocumentSnapshot>(
               stream: FirebaseFirestore.instance
                   .collection('users')
@@ -126,7 +184,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
                 final data = snapshot.data!.data() as Map<String, dynamic>?;
 
-                // Verificamos si existe el campo birthday
                 if (data == null || data['birthday'] == null) {
                   return const Text(
                     "Fecha de nacimiento no configurada",
@@ -134,11 +191,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   );
                 }
 
-                // Si birthday es un Timestamp de Firestore
                 final Timestamp ts = data['birthday'];
                 final DateTime date = ts.toDate();
 
-                // Formateamos la fecha (ejemplo: 05/05/2000)
                 final formatted = "${date.day}/${date.month}/${date.year}";
 
                 return Text(
@@ -183,12 +238,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
               onTap: () async {
                 await FirebaseAuth.instance.signOut();
 
-                // Opcional: mostrar mensaje
                 ScaffoldMessenger.of(
                   context,
                 ).showSnackBar(const SnackBar(content: Text('Sesión cerrada')));
 
-                // Opcional: redirigir a pantalla de login
                 Navigator.pushReplacement(
                   context,
                   MaterialPageRoute(builder: (context) => const AuthGate()),
