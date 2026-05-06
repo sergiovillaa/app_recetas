@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class CreateRecipeScreen extends StatefulWidget {
   const CreateRecipeScreen({super.key});
@@ -43,11 +45,14 @@ class _CreateRecipeScreenState extends State<CreateRecipeScreen> {
     });
   }
 
-  void _submit() {
+  Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
 
+    final user = FirebaseAuth.instance.currentUser;
+    final authorName = user?.displayName ?? user?.email ?? 'Anónimo';
+
     final recipe = {
-      "name": _nameController.text,
+      "title": _nameController.text,
       "description": _descriptionController.text,
       "type": _type,
       "difficulty": _difficulty,
@@ -57,13 +62,37 @@ class _CreateRecipeScreenState extends State<CreateRecipeScreen> {
       "image": _imageController.text,
       "ingredients": _ingredients.map((e) => e.text).toList(),
       "steps": _steps.map((e) => e.text).toList(),
+      "author": authorName,
+      "likes": 0,
+      "createdAt": FieldValue.serverTimestamp(),
     };
 
-    print(recipe);
+    try {
+      await FirebaseFirestore.instance.collection('recipes').add(recipe);
+      
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Receta guardada exitosamente')),
+      );
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Receta guardada')),
-    );
+      // Limpiar formulario
+      _formKey.currentState!.reset();
+      _nameController.clear();
+      _descriptionController.clear();
+      _durationController.clear();
+      _imageController.clear();
+      setState(() {
+        _isVegan = false;
+        _isVegetarian = false;
+        _ingredients = [TextEditingController()];
+        _steps = [TextEditingController()];
+      });
+
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error al guardar: $e')),
+      );
+    }
   }
 
   @override

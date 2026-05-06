@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:proyecto_recetas/data/dummy_recipes.dart';
 import 'package:proyecto_recetas/models/recipe.dart';
 import 'package:proyecto_recetas/screens/create_recipe_screen.dart';
 import 'package:proyecto_recetas/screens/favorites_screen.dart';
 import 'package:proyecto_recetas/screens/feed_screen.dart';
+import 'package:proyecto_recetas/screens/leaderboard_screen.dart';
 import 'package:proyecto_recetas/screens/profile_screen.dart';
 
 class TabsScreen extends StatefulWidget {
@@ -18,11 +18,11 @@ class _TabsScreenState extends State<TabsScreen> {
   final List<Recipe> _favoriteRecipes = [];
 
   void _toggleRecipeFavorite(Recipe recipe) {
-    final isExistingFavorite = _favoriteRecipes.contains(recipe);
+    final isExistingFavorite = _favoriteRecipes.indexWhere((r) => r.id == recipe.id) != -1;
 
     setState(() {
       if (isExistingFavorite) {
-        _favoriteRecipes.remove(recipe);
+        _favoriteRecipes.removeWhere((r) => r.id == recipe.id);
       } else {
         _favoriteRecipes.add(recipe);
       }
@@ -30,7 +30,7 @@ class _TabsScreenState extends State<TabsScreen> {
   }
 
   bool _isRecipeFavorite(Recipe recipe) {
-    return _favoriteRecipes.contains(recipe);
+    return _favoriteRecipes.any((r) => r.id == recipe.id);
   }
 
   @override
@@ -38,7 +38,6 @@ class _TabsScreenState extends State<TabsScreen> {
     return Scaffold(
       body: [
         FeedScreen(
-          recipes: dummyRecipes,
           onToggleFavorite: _toggleRecipeFavorite,
           isFavorite: _isRecipeFavorite,
         ),
@@ -48,6 +47,7 @@ class _TabsScreenState extends State<TabsScreen> {
           onToggleFavorite: _toggleRecipeFavorite,
           isFavorite: _isRecipeFavorite,
         ),
+        const LeaderboardScreen(),
         const ProfileScreen(),
       ][currentPageIndex],
       bottomNavigationBar: NavigationBar(
@@ -72,6 +72,11 @@ class _TabsScreenState extends State<TabsScreen> {
             selectedIcon: Icon(Icons.star),
             icon: Icon(Icons.star_border),
             label: 'Favoritos',
+          ),
+          NavigationDestination(
+            selectedIcon: Icon(Icons.emoji_events),
+            icon: Icon(Icons.emoji_events_outlined),
+            label: 'Ranking',
           ),
           NavigationDestination(
             selectedIcon: Icon(Icons.person),

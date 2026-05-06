@@ -8,6 +8,7 @@ const dummyRecipes = [
     isVegan: true,
     isVegetarian: true,
     author: 'Luz M.',
+    likes: 120,
   ),
   Recipe(
     id: 'r2',
@@ -16,6 +17,7 @@ const dummyRecipes = [
     isVegan: false,
     isVegetarian: true,
     author: 'Marco R.',
+    likes: 85,
   ),
   Recipe(
     id: 'r3',
@@ -24,6 +26,7 @@ const dummyRecipes = [
     isVegan: true,
     isVegetarian: true,
     author: 'Sofia G.',
+    likes: 230,
   ),
   Recipe(
     id: 'r4',
@@ -32,5 +35,6 @@ const dummyRecipes = [
     isVegan: false,
     isVegetarian: false,
     author: 'Carlos P.',
+    likes: 45,
   ),
 ];

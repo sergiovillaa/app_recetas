@@ -65,4 +65,5 @@ class DefaultFirebaseOptions {
     storageBucket: 'apprecetas-ccdab.firebasestorage.app',
     iosBundleId: 'com.example.proyectoRecetas',
   );
+
 }
