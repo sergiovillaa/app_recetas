@@ -1,17 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:proyecto_recetas/models/recipe.dart';
 import 'package:proyecto_recetas/screens/recipe_screen.dart';
 
-class FeedScreen extends StatelessWidget {
-  const FeedScreen({
-    super.key,
-    required this.onToggleFavorite,
-    required this.isFavorite,
-  });
+final uid = FirebaseAuth.instance.currentUser!.uid;
+var autor;
 
-  final void Function(Recipe recipe) onToggleFavorite;
-  final bool Function(Recipe recipe) isFavorite;
+class OwnRecipesScreen extends StatelessWidget {
+  const OwnRecipesScreen({super.key});
 
   void _handleLike(String recipeId) {
     FirebaseFirestore.instance.collection('recipes').doc(recipeId).update({
@@ -21,12 +18,13 @@ class FeedScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    loadUser();
     return Scaffold(
-      appBar: AppBar(title: const Text('Recetas')),
+      appBar: AppBar(title: const Text('Mis recetas')),
       body: StreamBuilder<QuerySnapshot>(
         stream: FirebaseFirestore.instance
             .collection('recipes')
-            .orderBy('createdAt', descending: true)
+            .where('author', isEqualTo: autor)
             .snapshots(),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
@@ -40,7 +38,7 @@ class FeedScreen extends StatelessWidget {
           final docs = snapshot.data?.docs ?? [];
 
           if (docs.isEmpty) {
-            return const Center(child: Text('No hay recetas publicadas.'));
+            return const Center(child: Text('No has publicado recetas.'));
           }
 
           return ListView.builder(
@@ -50,7 +48,6 @@ class FeedScreen extends StatelessWidget {
               final doc = docs[index];
               final data = doc.data() as Map<String, dynamic>;
               final recipe = Recipe.fromJson(data, doc.id);
-              final isFav = isFavorite(recipe);
 
               return Card(
                 margin: const EdgeInsets.symmetric(vertical: 8),
@@ -65,10 +62,6 @@ class FeedScreen extends StatelessWidget {
                         icon: const Icon(Icons.thumb_up_outlined),
                       ),
                       Text('${recipe.likes}'),
-                      IconButton(
-                        onPressed: () => onToggleFavorite(recipe),
-                        icon: Icon(isFav ? Icons.star : Icons.star_border),
-                      ),
                     ],
                   ),
                   onTap: () {
@@ -88,4 +81,12 @@ class FeedScreen extends StatelessWidget {
       ),
     );
   }
+}
+
+Future<void> loadUser() async {
+  final userDoc = await FirebaseFirestore.instance
+      .collection('users')
+      .doc(uid)
+      .get();
+  autor = userDoc.data()?['username'] ?? 'Anónimo';
 }

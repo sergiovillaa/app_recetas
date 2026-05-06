@@ -47,9 +47,12 @@ class _CreateRecipeScreenState extends State<CreateRecipeScreen> {
 
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
-
-    final user = FirebaseAuth.instance.currentUser;
-    final authorName = user?.displayName ?? user?.email ?? 'Anónimo';
+    final uid = FirebaseAuth.instance.currentUser!.uid;
+    final userDoc = await FirebaseFirestore.instance
+        .collection('users')
+        .doc(uid)
+        .get();
+    final authorName = userDoc.data()?['username'] ?? 'Anónimo';
 
     final recipe = {
       "title": _nameController.text,
@@ -69,7 +72,7 @@ class _CreateRecipeScreenState extends State<CreateRecipeScreen> {
 
     try {
       await FirebaseFirestore.instance.collection('recipes').add(recipe);
-      
+
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Receta guardada exitosamente')),
@@ -87,11 +90,10 @@ class _CreateRecipeScreenState extends State<CreateRecipeScreen> {
         _ingredients = [TextEditingController()];
         _steps = [TextEditingController()];
       });
-
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error al guardar: $e')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Error al guardar: $e')));
     }
   }
 
@@ -107,8 +109,7 @@ class _CreateRecipeScreenState extends State<CreateRecipeScreen> {
             TextFormField(
               controller: _nameController,
               decoration: const InputDecoration(labelText: 'Nombre'),
-              validator: (value) =>
-                  value!.isEmpty ? 'Campo obligatorio' : null,
+              validator: (value) => value!.isEmpty ? 'Campo obligatorio' : null,
             ),
             const SizedBox(height: 16),
 
@@ -156,9 +157,7 @@ class _CreateRecipeScreenState extends State<CreateRecipeScreen> {
 
             TextFormField(
               controller: _imageController,
-              decoration: const InputDecoration(
-                labelText: 'URL de imagen',
-              ),
+              decoration: const InputDecoration(labelText: 'URL de imagen'),
             ),
             const SizedBox(height: 16),
 
@@ -187,14 +186,15 @@ class _CreateRecipeScreenState extends State<CreateRecipeScreen> {
             const SizedBox(height: 24),
             const Text('Ingredientes', style: TextStyle(fontSize: 18)),
 
-            ..._ingredients.map((controller) => Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 8),
-                  child: TextFormField(
-                    controller: controller,
-                    decoration:
-                        const InputDecoration(labelText: 'Ingrediente'),
-                  ),
-                )),
+            ..._ingredients.map(
+              (controller) => Padding(
+                padding: const EdgeInsets.symmetric(vertical: 8),
+                child: TextFormField(
+                  controller: controller,
+                  decoration: const InputDecoration(labelText: 'Ingrediente'),
+                ),
+              ),
+            ),
 
             TextButton(
               onPressed: _addIngredient,
@@ -210,8 +210,7 @@ class _CreateRecipeScreenState extends State<CreateRecipeScreen> {
                 padding: const EdgeInsets.symmetric(vertical: 8),
                 child: TextFormField(
                   controller: entry.value,
-                  decoration:
-                      InputDecoration(labelText: 'Paso ${i + 1}'),
+                  decoration: InputDecoration(labelText: 'Paso ${i + 1}'),
                 ),
               );
             }),
@@ -223,10 +222,7 @@ class _CreateRecipeScreenState extends State<CreateRecipeScreen> {
 
             const SizedBox(height: 24),
 
-            FilledButton(
-              onPressed: _submit,
-              child: const Text('Publicar'),
-            ),
+            FilledButton(onPressed: _submit, child: const Text('Publicar')),
           ],
         ),
       ),

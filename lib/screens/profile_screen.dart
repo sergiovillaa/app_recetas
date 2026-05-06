@@ -1,9 +1,13 @@
 import 'package:flutter/material.dart';
-import 'package:proyecto_recetas/screens/configuracion.dart'; 
+import 'package:proyecto_recetas/screens/configuracion.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:avataaars/avataaars.dart';
-import 'package:flutter/cupertino.dart';
-import 'package:flutter_svg/flutter_svg.dart';// ajusta la ruta si es necesario
-
+import 'package:flutter_svg/flutter_svg.dart';
+import 'package:proyecto_recetas/screens/edit_profile_screen.dart';
+import 'package:proyecto_recetas/screens/auth_screen.dart';
+import 'package:proyecto_recetas/screens/own_screen.dart';
+import 'dart:io';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -14,6 +18,7 @@ class ProfileScreen extends StatefulWidget {
 
 class _ProfileScreenState extends State<ProfileScreen> {
   var avatar = Avataaar.random();
+  File? _pickedImage = null;
   DateTime selectedDate = DateTime.now();
   @override
   Widget build(BuildContext context) {
@@ -23,40 +28,78 @@ class _ProfileScreenState extends State<ProfileScreen> {
         actions: [
           IconButton(
             icon: const Icon(Icons.edit),
-            onPressed: () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Editar perfil')),
+            onPressed: () async {
+              _pickedImage = await Navigator.push<File?>(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const EditProfileScreen(),
+                ),
               );
+              if (_pickedImage != null) {
+                setState(() {
+                  _pickedImage = _pickedImage;
+                });
+              }
             },
-          )
+          ),
         ],
       ),
 
       body: SingleChildScrollView(
         child: Column(
           children: [
-
             const SizedBox(height: 20),
-            SvgPicture.string(avatar.toSvg(), width: 200, height: 200),
-            ElevatedButton(
-              onPressed: () {
-                setState(() {
-                  avatar = Avataaar.random();
-                });
-              },
-              child: Text("Generar"),
-            ),
+            _pickedImage != null
+                ? Image.file(
+                    _pickedImage!,
+                    width: 200,
+                    height: 200,
+                    fit: BoxFit.cover,
+                  )
+                : SvgPicture.string(avatar.toSvg(), width: 200, height: 200),
+            // ElevatedButton(
+            //   onPressed: () {
+            //     setState(() {
+            //       avatar = Avataaar.random();
+            //     });
+            //   },
+            //   child: Text("Generar"),
+            // ),
             const SizedBox(height: 12),
-            const Text(
-              'Carlos Eduardo',
-              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-            ),
 
-            const Text(
-              'carlos@email.com',
+            StreamBuilder<DocumentSnapshot>(
+              stream: FirebaseFirestore.instance
+                  .collection('users')
+                  .doc(FirebaseAuth.instance.currentUser!.uid)
+                  .snapshots(),
+              builder: (context, snapshot) {
+                if (!snapshot.hasData) {
+                  return const Text(
+                    'Cargando...',
+                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                  );
+                }
+                final data = snapshot.data!.data() as Map<String, dynamic>?;
+
+                final username =
+                    (data?['username'] != null &&
+                        (data?['username'] as String).isNotEmpty)
+                    ? data!['username']
+                    : 'Usuario sin nombre';
+
+                return Text(
+                  username,
+                  style: const TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                  ),
+                );
+              },
+            ),
+            Text(
+              FirebaseAuth.instance.currentUser?.email ?? 'Sin correo',
               style: TextStyle(color: Colors.grey),
             ),
-
             const SizedBox(height: 20),
 
             Padding(
@@ -71,30 +114,54 @@ class _ProfileScreenState extends State<ProfileScreen> {
             ),
 
             const SizedBox(height: 20),
-            Text("FECHA DE NACIMIENTO:"),
-            SizedBox(
-              height: 250,
-              child: CupertinoDatePicker(
-                mode: CupertinoDatePickerMode.date,
-                initialDateTime: selectedDate,
-                onDateTimeChanged: (DateTime newDate) {
-                  setState(() {
-                    selectedDate = newDate;
-                  });
-                },
-              ),
+            StreamBuilder<DocumentSnapshot>(
+              stream: FirebaseFirestore.instance
+                  .collection('users')
+                  .doc(FirebaseAuth.instance.currentUser!.uid)
+                  .snapshots(),
+              builder: (context, snapshot) {
+                if (!snapshot.hasData) {
+                  return const Text("Cargando fecha...");
+                }
+
+                final data = snapshot.data!.data() as Map<String, dynamic>?;
+
+                // Verificamos si existe el campo birthday
+                if (data == null || data['birthday'] == null) {
+                  return const Text(
+                    "Fecha de nacimiento no configurada",
+                    style: TextStyle(color: Colors.grey),
+                  );
+                }
+
+                // Si birthday es un Timestamp de Firestore
+                final Timestamp ts = data['birthday'];
+                final DateTime date = ts.toDate();
+
+                // Formateamos la fecha (ejemplo: 05/05/2000)
+                final formatted = "${date.day}/${date.month}/${date.year}";
+
+                return Text(
+                  "Fecha de nacimiento: $formatted",
+                  style: const TextStyle(fontSize: 16),
+                );
+              },
             ),
-
-
 
             const SizedBox(height: 20),
             const Divider(),
 
-
             _OptionTile(
               icon: Icons.book,
               title: 'Mis recetas',
-              onTap: () {},
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const OwnRecipesScreen(),
+                  ),
+                );
+              },
             ),
 
             _OptionTile(
@@ -110,11 +177,23 @@ class _ProfileScreenState extends State<ProfileScreen> {
               },
             ),
 
-
             _OptionTile(
               icon: Icons.logout,
               title: 'Cerrar sesión',
-              onTap: () {},
+              onTap: () async {
+                await FirebaseAuth.instance.signOut();
+
+                // Opcional: mostrar mensaje
+                ScaffoldMessenger.of(
+                  context,
+                ).showSnackBar(const SnackBar(content: Text('Sesión cerrada')));
+
+                // Opcional: redirigir a pantalla de login
+                Navigator.pushReplacement(
+                  context,
+                  MaterialPageRoute(builder: (context) => const AuthGate()),
+                );
+              },
             ),
 
             const SizedBox(height: 20),
@@ -129,10 +208,7 @@ class _StatItem extends StatelessWidget {
   final String title;
   final String value;
 
-  const _StatItem({
-    required this.title,
-    required this.value,
-  });
+  const _StatItem({required this.title, required this.value});
 
   @override
   Widget build(BuildContext context) {
