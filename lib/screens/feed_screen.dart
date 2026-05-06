@@ -19,6 +19,10 @@ class FeedScreen extends StatelessWidget {
     });
   }
 
+  Future<void> _refresh() async {
+    await Future.delayed(const Duration(seconds: 1));
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -43,46 +47,50 @@ class FeedScreen extends StatelessWidget {
             return const Center(child: Text('No hay recetas publicadas.'));
           }
 
-          return ListView.builder(
-            padding: const EdgeInsets.all(16),
-            itemCount: docs.length,
-            itemBuilder: (context, index) {
-              final doc = docs[index];
-              final data = doc.data() as Map<String, dynamic>;
-              final recipe = Recipe.fromJson(data, doc.id);
-              final isFav = isFavorite(recipe);
+          return RefreshIndicator(
+            onRefresh: _refresh,
+            child: ListView.builder(
+              physics: const AlwaysScrollableScrollPhysics(),
+              padding: const EdgeInsets.all(16),
+              itemCount: docs.length,
+              itemBuilder: (context, index) {
+                final doc = docs[index];
+                final data = doc.data() as Map<String, dynamic>;
+                final recipe = Recipe.fromJson(data, doc.id);
+                final isFav = isFavorite(recipe);
 
-              return Card(
-                margin: const EdgeInsets.symmetric(vertical: 8),
-                child: ListTile(
-                  title: Text(recipe.title),
-                  subtitle: Text('${recipe.type}     ${recipe.author}'),
-                  trailing: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      IconButton(
-                        onPressed: () => _handleLike(recipe.id),
-                        icon: const Icon(Icons.thumb_up_outlined),
-                      ),
-                      Text('${recipe.likes}'),
-                      IconButton(
-                        onPressed: () => onToggleFavorite(recipe),
-                        icon: Icon(isFav ? Icons.star : Icons.star_border),
-                      ),
-                    ],
+                return Card(
+                  margin: const EdgeInsets.symmetric(vertical: 8),
+                  child: ListTile(
+                    title: Text(recipe.title),
+                    subtitle: Text('${recipe.type}     ${recipe.author}'),
+                    trailing: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        IconButton(
+                          onPressed: () => _handleLike(recipe.id),
+                          icon: const Icon(Icons.thumb_up_outlined),
+                        ),
+                        Text('${recipe.likes}'),
+                        IconButton(
+                          onPressed: () => onToggleFavorite(recipe),
+                          icon: Icon(isFav ? Icons.star : Icons.star_border),
+                        ),
+                      ],
+                    ),
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) =>
+                              RecipeDetailScreen(recipeId: recipe.id),
+                        ),
+                      );
+                    },
                   ),
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) =>
-                            RecipeDetailScreen(recipeId: recipe.id),
-                      ),
-                    );
-                  },
-                ),
-              );
-            },
+                );
+              },
+            ),
           );
         },
       ),
