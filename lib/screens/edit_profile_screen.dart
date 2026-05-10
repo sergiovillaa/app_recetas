@@ -19,7 +19,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   final TextEditingController _usernameController = TextEditingController();
   DateTime _selectedDate = DateTime.now();
   File? _pickedImage;
-  final Avataaar _avatar = Avataaar.random();
+  var _avatar = Avataaar.random().toSvg();
 
   String? _uid;
   bool _isLoading = true;
@@ -63,10 +63,14 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       final birthday = data?['birthday'];
       final parsedBirthday = birthday is Timestamp ? birthday : null;
       final usernameValue = data?['username'];
+      final avatarSvg = data?['avatarSVG'];
 
       setState(() {
         _usernameController.text = usernameValue is String ? usernameValue : '';
         _selectedDate = parsedBirthday?.toDate() ?? DateTime.now();
+        _avatar = (avatarSvg is String && avatarSvg.isNotEmpty)
+            ? avatarSvg
+            : Avataaar.random().toSvg();
         _isLoading = false;
       });
     } else {
@@ -92,6 +96,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
           ? _usernameController.text.trim()
           : null,
       'birthday': Timestamp.fromDate(_selectedDate),
+      'avatarSVG': _avatar,
     }, SetOptions(merge: true));
 
     if (!mounted) {
@@ -145,7 +150,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                     height: 200,
                     fit: BoxFit.cover,
                   )
-                : SvgPicture.string(_avatar.toSvg(), width: 200, height: 200),
+                : SvgPicture.string(_avatar, width: 200, height: 200),
             ElevatedButton(
               onPressed: () async {
                 final picker = ImagePicker();
@@ -173,7 +178,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                 : ElevatedButton(
                     onPressed: () {
                       setState(() {
-                        avatar = Avataaar.random().toSvg();
+                        _avatar = Avataaar.random().toSvg();
                       });
                     },
                     child: Text("Generar avatar"),

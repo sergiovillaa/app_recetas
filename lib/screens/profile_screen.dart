@@ -236,7 +236,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
               onTap: () {
                 Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (context) => OwnRecipesScreen()),
+                  MaterialPageRoute(
+                    builder: (context) => OwnRecipesScreen(authorId: username),
+                  ),
                 );
               },
             ),

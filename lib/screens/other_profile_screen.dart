@@ -41,17 +41,6 @@ class _OtherProfileScreenState extends State<OtherProfileScreen> {
           children: [
             const SizedBox(height: 20),
 
-            // _pickedImage != null
-            //     ? Image.file(
-            //         _pickedImage!,
-            //         width: 200,
-            //         height: 200,
-            //         fit: BoxFit.cover,
-            //       )
-            //     : SvgPicture.string(avatar.toSvg(), width: 200, height: 200),
-
-            // const SizedBox(height: 12),
-
             // Username
             StreamBuilder<QuerySnapshot>(
               stream: FirebaseFirestore.instance
@@ -81,11 +70,23 @@ class _OtherProfileScreenState extends State<OtherProfileScreen> {
                     : 'Usuario sin email';
                 final Timestamp ts = data['birthday'];
                 final DateTime date = ts.toDate();
-
                 final formatted = "${date.day}/${date.month}/${date.year}";
-
+                final avatarSvg = data['avatarSVG'];
+                var avatar = (avatarSvg is String && avatarSvg.isNotEmpty)
+                    ? avatarSvg
+                    : Avataaar.random().toSvg();
                 return Column(
                   children: [
+                    _pickedImage != null
+                        ? Image.file(
+                            _pickedImage!,
+                            width: 200,
+                            height: 200,
+                            fit: BoxFit.cover,
+                          )
+                        : SvgPicture.string(avatar, width: 200, height: 200),
+
+                    const SizedBox(height: 12),
                     Text(
                       username,
                       style: const TextStyle(
