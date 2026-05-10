@@ -30,6 +30,15 @@ class _FeedScreenState extends State<FeedScreen> {
     await Future.delayed(const Duration(seconds: 1));
   }
 
+  List<String> _parseIngredients(String query) {
+    return query
+        .toLowerCase()
+        .split(',')
+        .map((e) => e.trim())
+        .where((e) => e.isNotEmpty)
+        .toList();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -39,7 +48,8 @@ class _FeedScreenState extends State<FeedScreen> {
           Padding(
             padding: const EdgeInsets.all(12),
             child: SearchBar(
-              hintText: 'Buscar receta o categoría...',
+              hintText:
+                  'Buscar receta, categoría o ingredientes (pollo, queso)',
               leading: const Icon(Icons.search),
               onChanged: (value) {
                 setState(() {
@@ -65,12 +75,29 @@ class _FeedScreenState extends State<FeedScreen> {
 
                 final docs = snapshot.data?.docs ?? [];
 
+                final ingredientSearch =
+                    searchQuery.contains(',') || searchQuery.isNotEmpty
+                    ? _parseIngredients(searchQuery)
+                    : [];
+
                 final filteredDocs = docs.where((doc) {
                   final data = doc.data() as Map<String, dynamic>;
 
                   final title = (data['title'] ?? '').toString().toLowerCase();
 
                   final type = (data['type'] ?? '').toString().toLowerCase();
+
+                  final ingredients =
+                      (data['ingredients'] as List<dynamic>? ?? [])
+                          .map((e) => e.toString().toLowerCase())
+                          .toList();
+
+                  if (ingredientSearch.isNotEmpty) {
+                    return ingredientSearch.every(
+                      (ingredient) =>
+                          ingredients.any((ing) => ing.contains(ingredient)),
+                    );
+                  }
 
                   return title.contains(searchQuery) ||
                       type.contains(searchQuery);
@@ -98,7 +125,7 @@ class _FeedScreenState extends State<FeedScreen> {
                         margin: const EdgeInsets.symmetric(vertical: 8),
                         child: ListTile(
                           title: Text(recipe.title),
-                          subtitle: Text('${recipe.type}     ${recipe.author}'),
+                          subtitle: Text('${recipe.type} • ${recipe.author}'),
                           trailing: Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [

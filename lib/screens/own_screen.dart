@@ -3,6 +3,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:proyecto_recetas/models/recipe.dart';
 import 'package:proyecto_recetas/screens/recipe_screen.dart';
+import 'package:proyecto_recetas/screens/edit_recipe_screen.dart';
 
 final uid = FirebaseAuth.instance.currentUser!.uid;
 var autor;
@@ -62,6 +63,42 @@ class OwnRecipesScreen extends StatelessWidget {
                         icon: const Icon(Icons.thumb_up_outlined),
                       ),
                       Text('${recipe.likes}'),
+                      IconButton(
+                        icon: const Icon(Icons.edit, color: Colors.blue),
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => EditRecipeScreen(recipeId: recipe.id),
+                            ),
+                          );
+                        },
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.delete, color: Colors.red),
+                        onPressed: () async {
+                          final confirm = await showDialog<bool>(
+                            context: context,
+                            builder: (context) => AlertDialog(
+                              title: const Text('Eliminar receta'),
+                              content: const Text('¿Estás seguro de que deseas eliminar esta receta?'),
+                              actions: [
+                                TextButton(
+                                  onPressed: () => Navigator.pop(context, false),
+                                  child: const Text('Cancelar'),
+                                ),
+                                TextButton(
+                                  onPressed: () => Navigator.pop(context, true),
+                                  child: const Text('Eliminar', style: TextStyle(color: Colors.red)),
+                                ),
+                              ],
+                            ),
+                          );
+                          if (confirm == true) {
+                            await FirebaseFirestore.instance.collection('recipes').doc(recipe.id).delete();
+                          }
+                        },
+                      ),
                     ],
                   ),
                   onTap: () {
