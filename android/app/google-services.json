@@ -12,7 +12,20 @@
           "package_name": "com.example.proyecto_recetas"
         }
       },
-      "oauth_client": [],
+      "oauth_client": [
+        {
+          "client_id": "656746746040-88hkcidi7vnmvalarepud9vtsfatg6io.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.proyecto_recetas",
+            "certificate_hash": "208d9cc574604edfde39e909c818724d0cd4e5ae"
+          }
+        },
+        {
+          "client_id": "656746746040-6ohogpj2t3cpr98q277bc93ipfhnmfit.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
       "api_key": [
         {
           "current_key": "AIzaSyAJOp2lxTQpbp6Scq3XOLLzFi-uends0BE"
@@ -20,7 +33,19 @@
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": []
+          "other_platform_oauth_client": [
+            {
+              "client_id": "656746746040-6ohogpj2t3cpr98q277bc93ipfhnmfit.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "656746746040-8reltkmvrsogbm7ku0pcp217fdbrqt4j.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.proyectoRecetas"
+              }
+            }
+          ]
         }
       }
     },
@@ -31,7 +56,12 @@
           "package_name": "com.example.proyectorecetas"
         }
       },
-      "oauth_client": [],
+      "oauth_client": [
+        {
+          "client_id": "656746746040-6ohogpj2t3cpr98q277bc93ipfhnmfit.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
       "api_key": [
         {
           "current_key": "AIzaSyAJOp2lxTQpbp6Scq3XOLLzFi-uends0BE"
@@ -39,7 +69,19 @@
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": []
+          "other_platform_oauth_client": [
+            {
+              "client_id": "656746746040-6ohogpj2t3cpr98q277bc93ipfhnmfit.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "656746746040-8reltkmvrsogbm7ku0pcp217fdbrqt4j.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.proyectoRecetas"
+              }
+            }
+          ]
         }
       }
     }
