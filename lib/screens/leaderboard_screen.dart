@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:proyecto_recetas/models/recipe.dart';
+import 'package:proyecto_recetas/screens/recipe_screen.dart';
+import 'package:proyecto_recetas/screens/other_profile_screen.dart';
 
 class LeaderboardScreen extends StatefulWidget {
   const LeaderboardScreen({super.key});
@@ -101,6 +103,15 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
                               ),
                             ],
                           ),
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) =>
+                                    RecipeDetailScreen(recipeId: recipe.id),
+                              ),
+                            );
+                          },
                         ),
                       );
                     },
@@ -142,6 +153,15 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
                               ),
                             ],
                           ),
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) =>
+                                    OtherProfileScreen(authorId: author.key),
+                              ),
+                            );
+                          },
                         ),
                       );
                     },

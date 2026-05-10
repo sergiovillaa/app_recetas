@@ -18,7 +18,8 @@ class _TabsScreenState extends State<TabsScreen> {
   final List<Recipe> _favoriteRecipes = [];
 
   void _toggleRecipeFavorite(Recipe recipe) {
-    final isExistingFavorite = _favoriteRecipes.indexWhere((r) => r.id == recipe.id) != -1;
+    final isExistingFavorite =
+        _favoriteRecipes.indexWhere((r) => r.id == recipe.id) != -1;
 
     setState(() {
       if (isExistingFavorite) {

@@ -5,11 +5,9 @@ import 'package:proyecto_recetas/models/recipe.dart';
 import 'package:proyecto_recetas/screens/recipe_screen.dart';
 import 'package:proyecto_recetas/screens/edit_recipe_screen.dart';
 
-final uid = FirebaseAuth.instance.currentUser!.uid;
-var autor;
-
 class OwnRecipesScreen extends StatelessWidget {
-  const OwnRecipesScreen({super.key});
+  final String authorId;
+  const OwnRecipesScreen({super.key, required this.authorId});
 
   void _handleLike(String recipeId) {
     FirebaseFirestore.instance.collection('recipes').doc(recipeId).update({
@@ -19,13 +17,12 @@ class OwnRecipesScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    loadUser();
     return Scaffold(
       appBar: AppBar(title: const Text('Mis recetas')),
       body: StreamBuilder<QuerySnapshot>(
         stream: FirebaseFirestore.instance
             .collection('recipes')
-            .where('author', isEqualTo: autor)
+            .where('author', isEqualTo: authorId)
             .snapshots(),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
@@ -69,7 +66,8 @@ class OwnRecipesScreen extends StatelessWidget {
                           Navigator.push(
                             context,
                             MaterialPageRoute(
-                              builder: (context) => EditRecipeScreen(recipeId: recipe.id),
+                              builder: (context) =>
+                                  EditRecipeScreen(recipeId: recipe.id),
                             ),
                           );
                         },
@@ -81,21 +79,30 @@ class OwnRecipesScreen extends StatelessWidget {
                             context: context,
                             builder: (context) => AlertDialog(
                               title: const Text('Eliminar receta'),
-                              content: const Text('¿Estás seguro de que deseas eliminar esta receta?'),
+                              content: const Text(
+                                '¿Estás seguro de que deseas eliminar esta receta?',
+                              ),
                               actions: [
                                 TextButton(
-                                  onPressed: () => Navigator.pop(context, false),
+                                  onPressed: () =>
+                                      Navigator.pop(context, false),
                                   child: const Text('Cancelar'),
                                 ),
                                 TextButton(
                                   onPressed: () => Navigator.pop(context, true),
-                                  child: const Text('Eliminar', style: TextStyle(color: Colors.red)),
+                                  child: const Text(
+                                    'Eliminar',
+                                    style: TextStyle(color: Colors.red),
+                                  ),
                                 ),
                               ],
                             ),
                           );
                           if (confirm == true) {
-                            await FirebaseFirestore.instance.collection('recipes').doc(recipe.id).delete();
+                            await FirebaseFirestore.instance
+                                .collection('recipes')
+                                .doc(recipe.id)
+                                .delete();
                           }
                         },
                       ),
@@ -118,12 +125,4 @@ class OwnRecipesScreen extends StatelessWidget {
       ),
     );
   }
-}
-
-Future<void> loadUser() async {
-  final userDoc = await FirebaseFirestore.instance
-      .collection('users')
-      .doc(uid)
-      .get();
-  autor = userDoc.data()?['username'] ?? 'Anónimo';
 }

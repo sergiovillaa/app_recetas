@@ -16,8 +16,9 @@ class ProfileScreen extends StatefulWidget {
   State<ProfileScreen> createState() => _ProfileScreenState();
 }
 
+late String username;
+
 class _ProfileScreenState extends State<ProfileScreen> {
-  var avatar = Avataaar.random();
   File? _pickedImage;
   DateTime selectedDate = DateTime.now();
 
@@ -52,17 +53,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
           children: [
             const SizedBox(height: 20),
 
-            _pickedImage != null
-                ? Image.file(
-                    _pickedImage!,
-                    width: 200,
-                    height: 200,
-                    fit: BoxFit.cover,
-                  )
-                : SvgPicture.string(avatar.toSvg(), width: 200, height: 200),
-
-            const SizedBox(height: 12),
-
             // Username
             StreamBuilder<DocumentSnapshot>(
               stream: FirebaseFirestore.instance
@@ -78,19 +68,37 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 }
 
                 final data = snapshot.data!.data() as Map<String, dynamic>?;
-
-                final username =
+                final avatar =
+                    (data?['avatarSVG'] != null &&
+                        (data?['avatarSVG'] as String).isNotEmpty)
+                    ? data!['avatarSVG']
+                    : Avataaar.random().toSvg();
+                username =
                     (data?['username'] != null &&
                         (data?['username'] as String).isNotEmpty)
                     ? data!['username']
                     : 'Usuario sin nombre';
 
-                return Text(
-                  username,
-                  style: const TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                  ),
+                return Column(
+                  children: [
+                    _pickedImage != null
+                        ? Image.file(
+                            _pickedImage!,
+                            width: 200,
+                            height: 200,
+                            fit: BoxFit.cover,
+                          )
+                        : SvgPicture.string(avatar, width: 200, height: 200),
+
+                    const SizedBox(height: 12),
+                    Text(
+                      username,
+                      style: const TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
                 );
               },
             ),
@@ -213,7 +221,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (context) => const OwnRecipesScreen(),
+                    builder: (context) => OwnRecipesScreen(authorId: username),
                   ),
                 );
               },

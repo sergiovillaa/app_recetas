@@ -17,9 +17,9 @@ class EditProfileScreen extends StatefulWidget {
 final TextEditingController _usernameController = TextEditingController();
 DateTime selectedDate = DateTime.now();
 final uid = FirebaseAuth.instance.currentUser!.uid;
+late var avatar;
 
 class _EditProfileScreenState extends State<EditProfileScreen> {
-  var avatar = Avataaar.random();
   File? _pickedImage;
   @override
   void initState() {
@@ -55,7 +55,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                     height: 200,
                     fit: BoxFit.cover,
                   )
-                : SvgPicture.string(avatar.toSvg(), width: 200, height: 200),
+                : SvgPicture.string(avatar, width: 200, height: 200),
             ElevatedButton(
               onPressed: () async {
                 final ImagePicker picker = ImagePicker();
@@ -71,14 +71,23 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
               },
               child: const Text("Seleccionar imagen"),
             ),
-            // ElevatedButton(
-            //   onPressed: () {
-            //     setState(() {
-            //       avatar = Avataaar.random();
-            //     });
-            //   },
-            //   child: Text("Generar"),
-            // ),
+            _pickedImage != null
+                ? ElevatedButton(
+                    onPressed: () {
+                      setState(() {
+                        _pickedImage = null;
+                      });
+                    },
+                    child: Text("Avatar"),
+                  )
+                : ElevatedButton(
+                    onPressed: () {
+                      setState(() {
+                        avatar = Avataaar.random().toSvg();
+                      });
+                    },
+                    child: Text("Generar avatar"),
+                  ),
             const SizedBox(height: 12),
 
             Padding(
@@ -118,6 +127,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                           ? _usernameController.text
                           : null,
                       "birthday": Timestamp.fromDate(selectedDate),
+                      "avatarSVG": avatar,
                     });
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(content: Text('Perfil actualizado')),
@@ -146,5 +156,9 @@ Future<void> load() async {
     final data = doc.data()!;
     _usernameController.text = data['username'] ?? '';
     selectedDate = (data['birthday'] as Timestamp?)?.toDate() ?? DateTime.now();
+    avatar =
+        (data['avatarSVG'] != null && (data['avatarSVG'] as String).isNotEmpty)
+        ? data['avatarSVG']
+        : Avataaar.random().toSvg();
   }
 }

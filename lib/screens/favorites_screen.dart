@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:proyecto_recetas/models/recipe.dart';
+import 'package:proyecto_recetas/screens/recipe_screen.dart';
 
 class FavoritesScreen extends StatelessWidget {
   const FavoritesScreen({
@@ -16,13 +17,9 @@ class FavoritesScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Favoritos'),
-      ),
+      appBar: AppBar(title: const Text('Favoritos')),
       body: favorites.isEmpty
-          ? const Center(
-              child: Text('Aun no tienes recetas favoritas'),
-            )
+          ? const Center(child: Text('Aun no tienes recetas favoritas'))
           : ListView.builder(
               padding: const EdgeInsets.all(16),
               itemCount: favorites.length,
@@ -34,11 +31,20 @@ class FavoritesScreen extends StatelessWidget {
                   margin: const EdgeInsets.symmetric(vertical: 8),
                   child: ListTile(
                     title: Text(recipe.title),
-                    subtitle: Text('${recipe.type}  •  ${recipe.author}'),
+                    subtitle: Text('${recipe.type}  ï¿½  ${recipe.author}'),
                     trailing: IconButton(
                       onPressed: () => onToggleFavorite(recipe),
                       icon: Icon(isFav ? Icons.star : Icons.star_border),
                     ),
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) =>
+                              RecipeDetailScreen(recipeId: recipe.id),
+                        ),
+                      );
+                    },
                   ),
                 );
               },
