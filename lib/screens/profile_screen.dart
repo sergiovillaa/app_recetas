@@ -24,6 +24,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) {
+      return const Scaffold(
+        body: Center(child: Text('No hay una sesion activa.')),
+      );
+    }
+
+    final uid = user.uid;
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Perfil'),
@@ -57,7 +66,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             StreamBuilder<DocumentSnapshot>(
               stream: FirebaseFirestore.instance
                   .collection('users')
-                  .doc(FirebaseAuth.instance.currentUser!.uid)
+                  .doc(uid)
                   .snapshots(),
               builder: (context, snapshot) {
                 if (!snapshot.hasData) {
@@ -114,7 +123,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             StreamBuilder<DocumentSnapshot>(
               stream: FirebaseFirestore.instance
                   .collection('users')
-                  .doc(FirebaseAuth.instance.currentUser!.uid)
+                  .doc(uid)
                   .snapshots(),
               builder: (context, userSnapshot) {
                 if (!userSnapshot.hasData) {
@@ -129,7 +138,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
                 final username = userData?['username'];
 
-                if (username == null) {
+                if (username is! String || username.isEmpty) {
                   return const Text('Usuario no encontrado');
                 }
 
@@ -183,7 +192,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             StreamBuilder<DocumentSnapshot>(
               stream: FirebaseFirestore.instance
                   .collection('users')
-                  .doc(FirebaseAuth.instance.currentUser!.uid)
+                  .doc(uid)
                   .snapshots(),
               builder: (context, snapshot) {
                 if (!snapshot.hasData) {
@@ -199,8 +208,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   );
                 }
 
-                final Timestamp ts = data['birthday'];
-                final DateTime date = ts.toDate();
+                final birthday = data['birthday'];
+                if (birthday is! Timestamp) {
+                  return const Text(
+                    "Fecha de nacimiento no configurada",
+                    style: TextStyle(color: Colors.grey),
+                  );
+                }
+
+                final DateTime date = birthday.toDate();
 
                 final formatted = "${date.day}/${date.month}/${date.year}";
 
@@ -220,9 +236,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               onTap: () {
                 Navigator.push(
                   context,
-                  MaterialPageRoute(
-                    builder: (context) => OwnRecipesScreen(authorId: username),
-                  ),
+                  MaterialPageRoute(builder: (context) => OwnRecipesScreen()),
                 );
               },
             ),

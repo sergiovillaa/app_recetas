@@ -1,6 +1,6 @@
-import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/material.dart';
 
 class CreateRecipeScreen extends StatefulWidget {
   const CreateRecipeScreen({super.key});
@@ -13,7 +13,7 @@ class _CreateRecipeScreenState extends State<CreateRecipeScreen> {
   final _formKey = GlobalKey<FormState>();
 
   String _type = 'Desayuno';
-  String _difficulty = 'Fácil';
+  String _difficulty = 'Facil';
 
   bool _isVegan = false;
   bool _isVegetarian = false;
@@ -33,6 +33,21 @@ class _CreateRecipeScreenState extends State<CreateRecipeScreen> {
     _steps.add(TextEditingController());
   }
 
+  @override
+  void dispose() {
+    _nameController.dispose();
+    _descriptionController.dispose();
+    _durationController.dispose();
+    _imageController.dispose();
+    for (final controller in _ingredients) {
+      controller.dispose();
+    }
+    for (final controller in _steps) {
+      controller.dispose();
+    }
+    super.dispose();
+  }
+
   void _addIngredient() {
     setState(() {
       _ingredients.add(TextEditingController());
@@ -47,27 +62,40 @@ class _CreateRecipeScreenState extends State<CreateRecipeScreen> {
 
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
-    final uid = FirebaseAuth.instance.currentUser!.uid;
+
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Debes iniciar sesion para publicar.')),
+      );
+      return;
+    }
+
     final userDoc = await FirebaseFirestore.instance
         .collection('users')
-        .doc(uid)
+        .doc(user.uid)
         .get();
-    final authorName = userDoc.data()?['username'] ?? 'Anónimo';
+    final data = userDoc.data();
+    final username = data?['username'];
+    final authorName = username is String && username.trim().isNotEmpty
+        ? username.trim()
+        : 'Anonimo';
 
     final recipe = {
-      "title": _nameController.text,
-      "description": _descriptionController.text,
-      "type": _type,
-      "difficulty": _difficulty,
-      "duration": _durationController.text,
-      "isVegan": _isVegan,
-      "isVegetarian": _isVegetarian,
-      "image": _imageController.text,
-      "ingredients": _ingredients.map((e) => e.text).toList(),
-      "steps": _steps.map((e) => e.text).toList(),
-      "author": authorName,
-      "likes": 0,
-      "createdAt": FieldValue.serverTimestamp(),
+      'title': _nameController.text,
+      'description': _descriptionController.text,
+      'type': _type,
+      'difficulty': _difficulty,
+      'duration': _durationController.text,
+      'isVegan': _isVegan,
+      'isVegetarian': _isVegetarian,
+      'image': _imageController.text,
+      'ingredients': _ingredients.map((e) => e.text).toList(),
+      'steps': _steps.map((e) => e.text).toList(),
+      'author': authorName,
+      'likes': 0,
+      'createdAt': FieldValue.serverTimestamp(),
     };
 
     try {
@@ -78,7 +106,6 @@ class _CreateRecipeScreenState extends State<CreateRecipeScreen> {
         const SnackBar(content: Text('Receta guardada exitosamente')),
       );
 
-      // Limpiar formulario
       _formKey.currentState!.reset();
       _nameController.clear();
       _descriptionController.clear();
@@ -87,13 +114,20 @@ class _CreateRecipeScreenState extends State<CreateRecipeScreen> {
       setState(() {
         _isVegan = false;
         _isVegetarian = false;
+        for (final controller in _ingredients) {
+          controller.dispose();
+        }
+        for (final controller in _steps) {
+          controller.dispose();
+        }
         _ingredients = [TextEditingController()];
         _steps = [TextEditingController()];
       });
     } catch (e) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Error al guardar: $e')));
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error al guardar: $e')),
+      );
     }
   }
 
@@ -112,14 +146,12 @@ class _CreateRecipeScreenState extends State<CreateRecipeScreen> {
               validator: (value) => value!.isEmpty ? 'Campo obligatorio' : null,
             ),
             const SizedBox(height: 16),
-
             TextFormField(
               controller: _descriptionController,
-              decoration: const InputDecoration(labelText: 'Descripción'),
+              decoration: const InputDecoration(labelText: 'Descripcion'),
               maxLines: 3,
             ),
             const SizedBox(height: 16),
-
             DropdownButtonFormField<String>(
               value: _type,
               decoration: const InputDecoration(labelText: 'Tipo'),
@@ -133,34 +165,30 @@ class _CreateRecipeScreenState extends State<CreateRecipeScreen> {
               onChanged: (value) => setState(() => _type = value!),
             ),
             const SizedBox(height: 16),
-
             DropdownButtonFormField<String>(
               value: _difficulty,
               decoration: const InputDecoration(labelText: 'Dificultad'),
               items: const [
-                DropdownMenuItem(value: 'Fácil', child: Text('Fácil')),
+                DropdownMenuItem(value: 'Facil', child: Text('Facil')),
                 DropdownMenuItem(value: 'Media', child: Text('Media')),
-                DropdownMenuItem(value: 'Difícil', child: Text('Difícil')),
+                DropdownMenuItem(value: 'Dificil', child: Text('Dificil')),
               ],
               onChanged: (value) => setState(() => _difficulty = value!),
             ),
             const SizedBox(height: 16),
-
             TextFormField(
               controller: _durationController,
               decoration: const InputDecoration(
-                labelText: 'Duración (minutos)',
+                labelText: 'Duracion (minutos)',
               ),
               keyboardType: TextInputType.number,
             ),
             const SizedBox(height: 16),
-
             TextFormField(
               controller: _imageController,
               decoration: const InputDecoration(labelText: 'URL de imagen'),
             ),
             const SizedBox(height: 16),
-
             SwitchListTile(
               title: const Text('Vegano'),
               value: _isVegan,
@@ -171,7 +199,6 @@ class _CreateRecipeScreenState extends State<CreateRecipeScreen> {
                 });
               },
             ),
-
             SwitchListTile(
               title: const Text('Vegetariano'),
               value: _isVegetarian,
@@ -182,10 +209,8 @@ class _CreateRecipeScreenState extends State<CreateRecipeScreen> {
                 });
               },
             ),
-
             const SizedBox(height: 24),
             const Text('Ingredientes', style: TextStyle(fontSize: 18)),
-
             ..._ingredients.map(
               (controller) => Padding(
                 padding: const EdgeInsets.symmetric(vertical: 8),
@@ -195,17 +220,14 @@ class _CreateRecipeScreenState extends State<CreateRecipeScreen> {
                 ),
               ),
             ),
-
             TextButton(
               onPressed: _addIngredient,
               child: const Text('+ Agregar ingrediente'),
             ),
-
             const SizedBox(height: 24),
             const Text('Pasos', style: TextStyle(fontSize: 18)),
-
             ..._steps.asMap().entries.map((entry) {
-              int i = entry.key;
+              final i = entry.key;
               return Padding(
                 padding: const EdgeInsets.symmetric(vertical: 8),
                 child: TextFormField(
@@ -214,14 +236,11 @@ class _CreateRecipeScreenState extends State<CreateRecipeScreen> {
                 ),
               );
             }),
-
             TextButton(
               onPressed: _addStep,
               child: const Text('+ Agregar paso'),
             ),
-
             const SizedBox(height: 24),
-
             FilledButton(onPressed: _submit, child: const Text('Publicar')),
           ],
         ),

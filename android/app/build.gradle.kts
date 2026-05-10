@@ -42,6 +42,14 @@ android {
     }
 }
 
+configurations.all {
+    resolutionStrategy.force("androidx.biometric:biometric:1.4.0-alpha07")
+}
+
+dependencies {
+    implementation("androidx.biometric:biometric:1.4.0-alpha07")
+}
+
 flutter {
     source = "../.."
 }
