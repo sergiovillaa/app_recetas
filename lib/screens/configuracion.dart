@@ -1,6 +1,7 @@
-import 'package:flutter/material.dart';
 import 'package:adaptive_theme/adaptive_theme.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/material.dart';
+import 'package:proyecto_recetas/screens/auth_screen.dart';
 
 class AppSettingsScreen extends StatefulWidget {
   const AppSettingsScreen({super.key});
@@ -18,7 +19,7 @@ class _AppSettingsScreenState extends State<AppSettingsScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Configuración de la app'),
+        title: const Text('Configuracion de la app'),
       ),
       body: ListView(
         children: [
@@ -64,7 +65,7 @@ class _AppSettingsScreenState extends State<AppSettingsScreen> {
           ListTile(
             leading: const Icon(Icons.logout, color: Colors.red),
             title: const Text(
-              'Cerrar sesión',
+              'Cerrar sesion',
               style: TextStyle(color: Colors.red),
             ),
             subtitle: const Text('Volver a la pantalla de inicio'),
@@ -72,7 +73,7 @@ class _AppSettingsScreenState extends State<AppSettingsScreen> {
           ),
           const ListTile(
             leading: Icon(Icons.info),
-            title: Text('Versión'),
+            title: Text('Version'),
             subtitle: Text('1.0.0'),
           ),
         ],
@@ -123,8 +124,8 @@ class _AppSettingsScreenState extends State<AppSettingsScreen> {
       context: context,
       builder: (dialogContext) {
         return AlertDialog(
-          title: const Text('Cerrar sesión'),
-          content: const Text('¿Seguro que quieres cerrar sesión?'),
+          title: const Text('Cerrar sesion'),
+          content: const Text('Seguro que quieres cerrar sesion?'),
           actions: [
             TextButton(
               onPressed: () => Navigator.of(dialogContext).pop(false),
@@ -142,23 +143,10 @@ class _AppSettingsScreenState extends State<AppSettingsScreen> {
     if (shouldLogout == true) {
       await FirebaseAuth.instance.signOut();
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Sesión cerrada correctamente')),
+      Navigator.of(context).pushAndRemoveUntil(
+        MaterialPageRoute(builder: (_) => const AuthGate()),
+        (route) => false,
       );
     }
-  }
-
-  Widget _themeOption(String theme) {
-    return RadioListTile(
-      title: Text(theme),
-      value: theme,
-      groupValue: _theme,
-      onChanged: (value) {
-        setState(() {
-          _theme = value!;
-        });
-        Navigator.pop(context);
-      },
-    );
   }
 }

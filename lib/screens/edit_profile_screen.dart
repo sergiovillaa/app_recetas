@@ -1,11 +1,12 @@
-import 'package:flutter/material.dart';
+import 'dart:io';
+
+import 'package:avataaars/avataaars.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:avataaars/avataaars.dart';
 import 'package:flutter/cupertino.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:image_picker/image_picker.dart';
-import 'dart:io';
 
 class EditProfileScreen extends StatefulWidget {
   const EditProfileScreen({super.key});
@@ -14,21 +15,112 @@ class EditProfileScreen extends StatefulWidget {
   State<EditProfileScreen> createState() => _EditProfileScreenState();
 }
 
-final TextEditingController _usernameController = TextEditingController();
-DateTime selectedDate = DateTime.now();
-final uid = FirebaseAuth.instance.currentUser!.uid;
-
 class _EditProfileScreenState extends State<EditProfileScreen> {
-  var avatar = Avataaar.random();
+  final TextEditingController _usernameController = TextEditingController();
+  DateTime _selectedDate = DateTime.now();
   File? _pickedImage;
+  final Avataaar _avatar = Avataaar.random();
+
+  String? _uid;
+  bool _isLoading = true;
+
   @override
   void initState() {
     super.initState();
-    load();
+    _uid = FirebaseAuth.instance.currentUser?.uid;
+    _load();
+  }
+
+  @override
+  void dispose() {
+    _usernameController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _load() async {
+    final uid = _uid;
+    if (uid == null) {
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        _isLoading = false;
+      });
+      return;
+    }
+
+    final doc = await FirebaseFirestore.instance
+        .collection('users')
+        .doc(uid)
+        .get();
+
+    if (!mounted) {
+      return;
+    }
+
+    if (doc.exists) {
+      final data = doc.data();
+      final birthday = data?['birthday'];
+      final parsedBirthday = birthday is Timestamp ? birthday : null;
+      final usernameValue = data?['username'];
+
+      setState(() {
+        _usernameController.text =
+            usernameValue is String ? usernameValue : '';
+        _selectedDate = parsedBirthday?.toDate() ?? DateTime.now();
+        _isLoading = false;
+      });
+    } else {
+      setState(() {
+        _isLoading = false;
+      });
+    }
+  }
+
+  Future<void> _saveProfile() async {
+    final uid = _uid;
+    if (uid == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Debes iniciar sesion para editar tu perfil.')),
+      );
+      return;
+    }
+
+    await FirebaseFirestore.instance.collection('users').doc(uid).set({
+      'username': _usernameController.text.trim().isNotEmpty
+          ? _usernameController.text.trim()
+          : null,
+      'birthday': Timestamp.fromDate(_selectedDate),
+    }, SetOptions(merge: true));
+
+    if (!mounted) {
+      return;
+    }
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Perfil actualizado')),
+    );
+    Navigator.pop(context, _pickedImage);
   }
 
   @override
   Widget build(BuildContext context) {
+    if (_uid == null) {
+      return Scaffold(
+        appBar: AppBar(title: const Text('Perfil')),
+        body: const Center(
+          child: Text('No hay una sesion activa.'),
+        ),
+      );
+    }
+
+    if (_isLoading) {
+      return Scaffold(
+        appBar: AppBar(title: const Text('Perfil')),
+        body: const Center(child: CircularProgressIndicator()),
+      );
+    }
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Perfil'),
@@ -36,14 +128,13 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
           IconButton(
             icon: const Icon(Icons.edit),
             onPressed: () {
-              ScaffoldMessenger.of(
-                context,
-              ).showSnackBar(const SnackBar(content: Text('Editar perfil')));
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('Editar perfil')),
+              );
             },
           ),
         ],
       ),
-
       body: SingleChildScrollView(
         child: Column(
           children: [
@@ -55,10 +146,10 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                     height: 200,
                     fit: BoxFit.cover,
                   )
-                : SvgPicture.string(avatar.toSvg(), width: 200, height: 200),
+                : SvgPicture.string(_avatar.toSvg(), width: 200, height: 200),
             ElevatedButton(
               onPressed: () async {
-                final ImagePicker picker = ImagePicker();
+                final picker = ImagePicker();
                 final XFile? image = await picker.pickImage(
                   source: ImageSource.gallery,
                 );
@@ -69,82 +160,42 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                   });
                 }
               },
-              child: const Text("Seleccionar imagen"),
+              child: const Text('Seleccionar imagen'),
             ),
-            // ElevatedButton(
-            //   onPressed: () {
-            //     setState(() {
-            //       avatar = Avataaar.random();
-            //     });
-            //   },
-            //   child: Text("Generar"),
-            // ),
             const SizedBox(height: 12),
-
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 24),
               child: TextField(
                 controller: _usernameController,
                 decoration: const InputDecoration(
-                  labelText: "Nombre de usuario",
+                  labelText: 'Nombre de usuario',
                   border: OutlineInputBorder(),
                 ),
               ),
             ),
-
             const SizedBox(height: 20),
-            Text("FECHA DE NACIMIENTO:"),
+            const Text('FECHA DE NACIMIENTO:'),
             SizedBox(
               height: 250,
               child: CupertinoDatePicker(
                 mode: CupertinoDatePickerMode.date,
-                initialDateTime: selectedDate,
+                initialDateTime: _selectedDate,
                 onDateTimeChanged: (DateTime newDate) {
                   setState(() {
-                    selectedDate = newDate;
+                    _selectedDate = newDate;
                   });
                 },
               ),
             ),
-
             const SizedBox(height: 20),
             ElevatedButton(
-              onPressed: () async {
-                await FirebaseFirestore.instance
-                    .collection('users')
-                    .doc(uid)
-                    .update({
-                      "username": _usernameController.text.isNotEmpty
-                          ? _usernameController.text
-                          : null,
-                      "birthday": Timestamp.fromDate(selectedDate),
-                    });
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Perfil actualizado')),
-                );
-                Navigator.pop(
-                  context,
-                  _pickedImage,
-                ); // cerrar pantalla después de guardar
-              },
-              child: const Text("Guardar cambios"),
+              onPressed: _saveProfile,
+              child: const Text('Guardar cambios'),
             ),
             const Divider(),
           ],
         ),
       ),
     );
-  }
-}
-
-Future<void> load() async {
-  final doc = await FirebaseFirestore.instance
-      .collection('users')
-      .doc(uid)
-      .get();
-  if (doc.exists) {
-    final data = doc.data()!;
-    _usernameController.text = data['username'] ?? '';
-    selectedDate = (data['birthday'] as Timestamp?)?.toDate() ?? DateTime.now();
   }
 }

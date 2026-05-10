@@ -17,6 +17,9 @@ subprojects {
 }
 subprojects {
     project.evaluationDependsOn(":app")
+    configurations.configureEach {
+        resolutionStrategy.force("androidx.biometric:biometric:1.4.0-alpha07")
+    }
 }
 
 tasks.register<Delete>("clean") {

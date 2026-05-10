@@ -1,8 +1,9 @@
-import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/material.dart';
 
 class EditRecipeScreen extends StatefulWidget {
   final String recipeId;
+
   const EditRecipeScreen({super.key, required this.recipeId});
 
   @override
@@ -13,7 +14,7 @@ class _EditRecipeScreenState extends State<EditRecipeScreen> {
   final _formKey = GlobalKey<FormState>();
 
   String _type = 'Desayuno';
-  String _difficulty = 'Fácil';
+  String _difficulty = 'Facil';
 
   bool _isVegan = false;
   bool _isVegetarian = false;
@@ -25,7 +26,7 @@ class _EditRecipeScreenState extends State<EditRecipeScreen> {
 
   List<TextEditingController> _ingredients = [];
   List<TextEditingController> _steps = [];
-  
+
   bool _isLoading = true;
 
   @override
@@ -34,69 +35,99 @@ class _EditRecipeScreenState extends State<EditRecipeScreen> {
     _loadRecipe();
   }
 
+  @override
+  void dispose() {
+    _nameController.dispose();
+    _descriptionController.dispose();
+    _durationController.dispose();
+    _imageController.dispose();
+    for (final controller in _ingredients) {
+      controller.dispose();
+    }
+    for (final controller in _steps) {
+      controller.dispose();
+    }
+    super.dispose();
+  }
+
   Future<void> _loadRecipe() async {
     try {
-      final doc = await FirebaseFirestore.instance.collection('recipes').doc(widget.recipeId).get();
-      if (doc.exists) {
-        final data = doc.data() as Map<String, dynamic>;
-        
-        // Use post-frame callback or setState
+      final doc = await FirebaseFirestore.instance
+          .collection('recipes')
+          .doc(widget.recipeId)
+          .get();
+      if (!doc.exists) {
         if (!mounted) return;
-        
         setState(() {
-          _nameController.text = data['title'] ?? '';
-          _descriptionController.text = data['description'] ?? '';
-          
-          final typeVal = data['type'];
-          if (['Desayuno', 'Comida', 'Cena', 'Postre', 'Snack'].contains(typeVal)) {
-            _type = typeVal;
-          } else {
-            _type = 'Desayuno';
-          }
-          
-          final difficultyVal = data['difficulty'];
-          if (['Fácil', 'Media', 'Difícil'].contains(difficultyVal)) {
-            _difficulty = difficultyVal;
-          } else {
-            _difficulty = 'Fácil';
-          }
-          
-          _durationController.text = data['duration']?.toString() ?? '';
-          _imageController.text = data['image'] ?? '';
-          _isVegan = data['isVegan'] ?? false;
-          _isVegetarian = data['isVegetarian'] ?? false;
-          
-          if (data['ingredients'] != null) {
-            _ingredients = (data['ingredients'] as List).map((e) => TextEditingController(text: e.toString())).toList();
-          }
-          if (_ingredients.isEmpty) {
-            _ingredients.add(TextEditingController());
-          }
+          _isLoading = false;
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('La receta no existe')),
+        );
+        return;
+      }
 
-          if (data['steps'] != null) {
-            _steps = (data['steps'] as List).map((e) => TextEditingController(text: e.toString())).toList();
-          }
-          if (_steps.isEmpty) {
-            _steps.add(TextEditingController());
-          }
-          
-          _isLoading = false;
-        });
-      } else {
-        setState(() {
-          _isLoading = false;
-        });
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('La receta no existe')));
+      final data = doc.data() as Map<String, dynamic>;
+
+      if (!mounted) return;
+
+      setState(() {
+        _nameController.text = (data['title'] ?? '').toString();
+        _descriptionController.text = (data['description'] ?? '').toString();
+
+        final typeVal = data['type'];
+        if (['Desayuno', 'Comida', 'Cena', 'Postre', 'Snack'].contains(typeVal)) {
+          _type = typeVal;
+        } else {
+          _type = 'Desayuno';
         }
-      }
+
+        final difficultyVal = data['difficulty'];
+        if (['Facil', 'Media', 'Dificil', 'Fácil', 'Difícil'].contains(difficultyVal)) {
+          _difficulty = difficultyVal == 'Fácil'
+              ? 'Facil'
+              : difficultyVal == 'Difícil'
+                  ? 'Dificil'
+                  : difficultyVal;
+        } else {
+          _difficulty = 'Facil';
+        }
+
+        _durationController.text = data['duration']?.toString() ?? '';
+        _imageController.text = (data['image'] ?? '').toString();
+        _isVegan = data['isVegan'] ?? false;
+        _isVegetarian = data['isVegetarian'] ?? false;
+
+        final ingredients = data['ingredients'];
+        if (ingredients is List) {
+          _ingredients = ingredients
+              .map((e) => TextEditingController(text: e.toString()))
+              .toList();
+        }
+        if (_ingredients.isEmpty) {
+          _ingredients.add(TextEditingController());
+        }
+
+        final steps = data['steps'];
+        if (steps is List) {
+          _steps = steps
+              .map((e) => TextEditingController(text: e.toString()))
+              .toList();
+        }
+        if (_steps.isEmpty) {
+          _steps.add(TextEditingController());
+        }
+
+        _isLoading = false;
+      });
     } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error al cargar la receta: $e')));
-      }
+      if (!mounted) return;
       setState(() {
         _isLoading = false;
       });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error al cargar la receta: $e')),
+      );
     }
   }
 
@@ -114,23 +145,29 @@ class _EditRecipeScreenState extends State<EditRecipeScreen> {
 
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
-    
+
     final recipeUpdate = {
-      "title": _nameController.text,
-      "description": _descriptionController.text,
-      "type": _type,
-      "difficulty": _difficulty,
-      "duration": _durationController.text,
-      "isVegan": _isVegan,
-      "isVegetarian": _isVegetarian,
-      "image": _imageController.text,
-      "ingredients": _ingredients.map((e) => e.text).where((e) => e.isNotEmpty).toList(),
-      "steps": _steps.map((e) => e.text).where((e) => e.isNotEmpty).toList(),
-      "updatedAt": FieldValue.serverTimestamp(),
+      'title': _nameController.text,
+      'description': _descriptionController.text,
+      'type': _type,
+      'difficulty': _difficulty,
+      'duration': _durationController.text,
+      'isVegan': _isVegan,
+      'isVegetarian': _isVegetarian,
+      'image': _imageController.text,
+      'ingredients': _ingredients
+          .map((e) => e.text)
+          .where((e) => e.isNotEmpty)
+          .toList(),
+      'steps': _steps.map((e) => e.text).where((e) => e.isNotEmpty).toList(),
+      'updatedAt': FieldValue.serverTimestamp(),
     };
 
     try {
-      await FirebaseFirestore.instance.collection('recipes').doc(widget.recipeId).update(recipeUpdate);
+      await FirebaseFirestore.instance
+          .collection('recipes')
+          .doc(widget.recipeId)
+          .update(recipeUpdate);
 
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -139,9 +176,9 @@ class _EditRecipeScreenState extends State<EditRecipeScreen> {
       Navigator.pop(context);
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Error al actualizar: $e')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error al actualizar: $e')),
+      );
     }
   }
 
@@ -153,7 +190,7 @@ class _EditRecipeScreenState extends State<EditRecipeScreen> {
         body: const Center(child: CircularProgressIndicator()),
       );
     }
-    
+
     return Scaffold(
       appBar: AppBar(title: const Text('Editar receta')),
       body: Form(
@@ -167,14 +204,12 @@ class _EditRecipeScreenState extends State<EditRecipeScreen> {
               validator: (value) => value!.isEmpty ? 'Campo obligatorio' : null,
             ),
             const SizedBox(height: 16),
-
             TextFormField(
               controller: _descriptionController,
-              decoration: const InputDecoration(labelText: 'Descripción'),
+              decoration: const InputDecoration(labelText: 'Descripcion'),
               maxLines: 3,
             ),
             const SizedBox(height: 16),
-
             DropdownButtonFormField<String>(
               value: _type,
               decoration: const InputDecoration(labelText: 'Tipo'),
@@ -188,34 +223,30 @@ class _EditRecipeScreenState extends State<EditRecipeScreen> {
               onChanged: (value) => setState(() => _type = value!),
             ),
             const SizedBox(height: 16),
-
             DropdownButtonFormField<String>(
               value: _difficulty,
               decoration: const InputDecoration(labelText: 'Dificultad'),
               items: const [
-                DropdownMenuItem(value: 'Fácil', child: Text('Fácil')),
+                DropdownMenuItem(value: 'Facil', child: Text('Facil')),
                 DropdownMenuItem(value: 'Media', child: Text('Media')),
-                DropdownMenuItem(value: 'Difícil', child: Text('Difícil')),
+                DropdownMenuItem(value: 'Dificil', child: Text('Dificil')),
               ],
               onChanged: (value) => setState(() => _difficulty = value!),
             ),
             const SizedBox(height: 16),
-
             TextFormField(
               controller: _durationController,
               decoration: const InputDecoration(
-                labelText: 'Duración (minutos)',
+                labelText: 'Duracion (minutos)',
               ),
               keyboardType: TextInputType.number,
             ),
             const SizedBox(height: 16),
-
             TextFormField(
               controller: _imageController,
               decoration: const InputDecoration(labelText: 'URL de imagen'),
             ),
             const SizedBox(height: 16),
-
             SwitchListTile(
               title: const Text('Vegano'),
               value: _isVegan,
@@ -226,7 +257,6 @@ class _EditRecipeScreenState extends State<EditRecipeScreen> {
                 });
               },
             ),
-
             SwitchListTile(
               title: const Text('Vegetariano'),
               value: _isVegetarian,
@@ -237,12 +267,13 @@ class _EditRecipeScreenState extends State<EditRecipeScreen> {
                 });
               },
             ),
-
             const SizedBox(height: 24),
-            const Text('Ingredientes', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-
+            const Text(
+              'Ingredientes',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            ),
             ..._ingredients.asMap().entries.map((entry) {
-              int i = entry.key;
+              final i = entry.key;
               return Padding(
                 padding: const EdgeInsets.symmetric(vertical: 8),
                 child: Row(
@@ -250,7 +281,8 @@ class _EditRecipeScreenState extends State<EditRecipeScreen> {
                     Expanded(
                       child: TextFormField(
                         controller: entry.value,
-                        decoration: const InputDecoration(labelText: 'Ingrediente'),
+                        decoration:
+                            const InputDecoration(labelText: 'Ingrediente'),
                       ),
                     ),
                     IconButton(
@@ -260,22 +292,22 @@ class _EditRecipeScreenState extends State<EditRecipeScreen> {
                           _ingredients.removeAt(i);
                         });
                       },
-                    )
+                    ),
                   ],
                 ),
               );
             }),
-
             TextButton(
               onPressed: _addIngredient,
               child: const Text('+ Agregar ingrediente'),
             ),
-
             const SizedBox(height: 24),
-            const Text('Pasos', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-
+            const Text(
+              'Pasos',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            ),
             ..._steps.asMap().entries.map((entry) {
-              int i = entry.key;
+              final i = entry.key;
               return Padding(
                 padding: const EdgeInsets.symmetric(vertical: 8),
                 child: Row(
@@ -283,7 +315,8 @@ class _EditRecipeScreenState extends State<EditRecipeScreen> {
                     Expanded(
                       child: TextFormField(
                         controller: entry.value,
-                        decoration: InputDecoration(labelText: 'Paso ${i + 1}'),
+                        decoration:
+                            InputDecoration(labelText: 'Paso ${i + 1}'),
                       ),
                     ),
                     IconButton(
@@ -293,19 +326,16 @@ class _EditRecipeScreenState extends State<EditRecipeScreen> {
                           _steps.removeAt(i);
                         });
                       },
-                    )
+                    ),
                   ],
                 ),
               );
             }),
-
             TextButton(
               onPressed: _addStep,
               child: const Text('+ Agregar paso'),
             ),
-
             const SizedBox(height: 24),
-
             FilledButton(
               onPressed: _submit,
               style: FilledButton.styleFrom(
