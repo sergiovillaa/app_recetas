@@ -19,6 +19,7 @@ class FeedScreen extends StatefulWidget {
 
 class _FeedScreenState extends State<FeedScreen> {
   String searchQuery = '';
+  String selectedCategory = 'Todas';
 
   void _handleLike(String recipeId) {
     FirebaseFirestore.instance.collection('recipes').doc(recipeId).update({
@@ -47,15 +48,43 @@ class _FeedScreenState extends State<FeedScreen> {
         children: [
           Padding(
             padding: const EdgeInsets.all(12),
-            child: SearchBar(
-              hintText:
-                  'Buscar receta, categoría o ingredientes (pollo, queso)',
-              leading: const Icon(Icons.search),
-              onChanged: (value) {
-                setState(() {
-                  searchQuery = value.toLowerCase();
-                });
-              },
+            child: Row(
+              children: [
+                Expanded(
+                  child: SearchBar(
+                    hintText: 'Buscar receta o ingredientes...',
+                    leading: const Icon(Icons.search),
+                    onChanged: (value) {
+                      setState(() {
+                        searchQuery = value.toLowerCase();
+                      });
+                    },
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12),
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                    borderRadius: BorderRadius.circular(24),
+                  ),
+                  child: DropdownButtonHideUnderline(
+                    child: DropdownButton<String>(
+                      value: selectedCategory,
+                      items: ['Todas', 'Desayuno', 'Comida', 'Cena', 'Postre', 'Snack']
+                          .map((cat) => DropdownMenuItem(value: cat, child: Text(cat)))
+                          .toList(),
+                      onChanged: (value) {
+                        if (value != null) {
+                          setState(() {
+                            selectedCategory = value;
+                          });
+                        }
+                      },
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
           Expanded(
@@ -82,25 +111,26 @@ class _FeedScreenState extends State<FeedScreen> {
 
                 final filteredDocs = docs.where((doc) {
                   final data = doc.data() as Map<String, dynamic>;
+                  final type = (data['type'] ?? '').toString();
+
+                  if (selectedCategory != 'Todas' && type != selectedCategory) {
+                    return false;
+                  }
+
+                  if (searchQuery.isEmpty) return true;
 
                   final title = (data['title'] ?? '').toString().toLowerCase();
-
-                  final type = (data['type'] ?? '').toString().toLowerCase();
-
                   final ingredients =
                       (data['ingredients'] as List<dynamic>? ?? [])
                           .map((e) => e.toString().toLowerCase())
                           .toList();
 
-                  if (ingredientSearch.isNotEmpty) {
-                    return ingredientSearch.every(
-                      (ingredient) =>
-                          ingredients.any((ing) => ing.contains(ingredient)),
-                    );
-                  }
+                  bool matchesTitle = title.contains(searchQuery);
+                  bool matchesIngredients = ingredientSearch.isNotEmpty &&
+                      ingredientSearch.every((ingredient) =>
+                          ingredients.any((ing) => ing.contains(ingredient)));
 
-                  return title.contains(searchQuery) ||
-                      type.contains(searchQuery);
+                  return matchesTitle || matchesIngredients;
                 }).toList();
 
                 if (filteredDocs.isEmpty) {
