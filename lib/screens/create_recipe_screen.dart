@@ -1,6 +1,9 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
+import 'dart:io';
+import 'dart:convert';
 
 class CreateRecipeScreen extends StatefulWidget {
   const CreateRecipeScreen({super.key});
@@ -15,13 +18,13 @@ class _CreateRecipeScreenState extends State<CreateRecipeScreen> {
   String _type = 'Desayuno';
   String _difficulty = 'Facil';
 
+  File? _pickedImage;
   bool _isVegan = false;
   bool _isVegetarian = false;
 
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _descriptionController = TextEditingController();
   final TextEditingController _durationController = TextEditingController();
-  final TextEditingController _imageController = TextEditingController();
 
   List<TextEditingController> _ingredients = [];
   List<TextEditingController> _steps = [];
@@ -38,7 +41,6 @@ class _CreateRecipeScreenState extends State<CreateRecipeScreen> {
     _nameController.dispose();
     _descriptionController.dispose();
     _durationController.dispose();
-    _imageController.dispose();
     for (final controller in _ingredients) {
       controller.dispose();
     }
@@ -81,7 +83,8 @@ class _CreateRecipeScreenState extends State<CreateRecipeScreen> {
     final authorName = username is String && username.trim().isNotEmpty
         ? username.trim()
         : 'Anonimo';
-
+    final bytes = await _pickedImage!.readAsBytes();
+    final base64Image = base64Encode(bytes);
     final recipe = {
       'title': _nameController.text,
       'description': _descriptionController.text,
@@ -90,7 +93,7 @@ class _CreateRecipeScreenState extends State<CreateRecipeScreen> {
       'duration': _durationController.text,
       'isVegan': _isVegan,
       'isVegetarian': _isVegetarian,
-      'image': _imageController.text,
+      'image': base64Image,
       'ingredients': _ingredients.map((e) => e.text).toList(),
       'steps': _steps.map((e) => e.text).toList(),
       'author': authorName,
@@ -110,7 +113,7 @@ class _CreateRecipeScreenState extends State<CreateRecipeScreen> {
       _nameController.clear();
       _descriptionController.clear();
       _durationController.clear();
-      _imageController.clear();
+      _pickedImage = null;
       setState(() {
         _isVegan = false;
         _isVegetarian = false;
@@ -125,9 +128,9 @@ class _CreateRecipeScreenState extends State<CreateRecipeScreen> {
       });
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error al guardar: $e')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Error al guardar: $e')));
     }
   }
 
@@ -184,9 +187,33 @@ class _CreateRecipeScreenState extends State<CreateRecipeScreen> {
               keyboardType: TextInputType.number,
             ),
             const SizedBox(height: 16),
-            TextFormField(
-              controller: _imageController,
-              decoration: const InputDecoration(labelText: 'URL de imagen'),
+            Row(
+              children: [
+                _pickedImage != null
+                    ? Image.file(
+                        _pickedImage!,
+                        width: 150,
+                        height: 150,
+                        fit: BoxFit.cover,
+                      )
+                    : Container(),
+                SizedBox(width: 30),
+                ElevatedButton(
+                  onPressed: () async {
+                    final picker = ImagePicker();
+                    final XFile? image = await picker.pickImage(
+                      source: ImageSource.gallery,
+                    );
+
+                    if (image != null) {
+                      setState(() {
+                        _pickedImage = File(image.path);
+                      });
+                    }
+                  },
+                  child: const Text('Seleccionar imagen'),
+                ),
+              ],
             ),
             const SizedBox(height: 16),
             SwitchListTile(

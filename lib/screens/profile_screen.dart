@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:proyecto_recetas/screens/configuracion.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -82,6 +83,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         (data?['avatarSVG'] as String).isNotEmpty)
                     ? data!['avatarSVG']
                     : Avataaar.random().toSvg();
+                bool flag;
+                var bytes;
+                if (avatar != null && avatar.toString().startsWith('<svg')) {
+                  flag = false;
+                } else {
+                  bytes = base64Decode(avatar);
+                  flag = true;
+                }
                 username =
                     (data?['username'] != null &&
                         (data?['username'] as String).isNotEmpty)
@@ -90,15 +99,29 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
                 return Column(
                   children: [
-                    _pickedImage != null
-                        ? Image.file(
-                            _pickedImage!,
-                            width: 200,
+                    flag != false
+                        ? SizedBox(
                             height: 200,
-                            fit: BoxFit.cover,
+                            child: ClipOval(
+                              child: Image.memory(
+                                bytes,
+                                width: 200,
+                                height: 120,
+                                fit: BoxFit.cover,
+                              ),
+                            ),
                           )
                         : SvgPicture.string(avatar, width: 200, height: 200),
-
+                    // _pickedImage != null
+                    //     ? ClipOval(
+                    //         child: Image.file(
+                    //           _pickedImage!,
+                    //           width: 200,
+                    //           height: 200,
+                    //           fit: BoxFit.cover,
+                    //         ),
+                    //       )
+                    //     : SvgPicture.string(avatar, width: 200, height: 200),
                     const SizedBox(height: 12),
                     Text(
                       username,

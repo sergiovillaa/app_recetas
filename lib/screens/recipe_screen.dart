@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_tts/flutter_tts.dart';
 import 'package:speech_to_text/speech_to_text.dart' as stt;
+import 'dart:convert';
 
 class RecipeDetailScreen extends StatefulWidget {
   final String recipeId;
@@ -140,16 +141,17 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
             children: [
               // Imagen
               if (data['image'] != null && (data['image'] as String).isNotEmpty)
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(12),
-                  child: Image.network(
-                    data['image'],
-                    height: 220,
-                    width: double.infinity,
-                    fit: BoxFit.cover,
-                  ),
-                ),
+                Image.memory(base64Decode(data['image'])),
 
+              // ClipRRect(
+              //   borderRadius: BorderRadius.circular(12),
+              //   child: Image.network(
+              //     data['image'],
+              //     height: 220,
+              //     width: double.infinity,
+              //     fit: BoxFit.cover,
+              //   ),
+              // ),
               const SizedBox(height: 16),
 
               // Título

@@ -1,5 +1,5 @@
 import 'dart:io';
-
+import 'dart:convert';
 import 'package:avataaars/avataaars.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -144,11 +144,13 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
           children: [
             const SizedBox(height: 20),
             _pickedImage != null
-                ? Image.file(
-                    _pickedImage!,
-                    width: 200,
-                    height: 200,
-                    fit: BoxFit.cover,
+                ? ClipOval(
+                    child: Image.file(
+                      _pickedImage!,
+                      width: 200,
+                      height: 200,
+                      fit: BoxFit.cover,
+                    ),
                   )
                 : SvgPicture.string(_avatar, width: 200, height: 200),
             ElevatedButton(
@@ -159,8 +161,10 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                 );
 
                 if (image != null) {
+                  _pickedImage = File(image.path);
+                  var bytes = await _pickedImage!.readAsBytes();
                   setState(() {
-                    _pickedImage = File(image.path);
+                    _avatar = base64Encode(bytes);
                   });
                 }
               },
